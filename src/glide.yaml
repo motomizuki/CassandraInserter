@@ -1,0 +1,6 @@
+package: .
+import:
+- package: github.com/gocql/gocql
+- package: github.com/caarlos0/env
+  version: v2.1
+- package: github.com/golang/snappy
