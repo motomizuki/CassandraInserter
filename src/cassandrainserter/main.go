@@ -15,6 +15,9 @@ type config struct {
 	FILE string `env:"FILE" envDefault:"sample.csv"`
 	KEYSPACE string `env:"KEYSPACE" envDefault:"example"`
 	TABLE string `env:"TABLE" envDefault:"RS_SCORE_BY_ITEM"`
+	USER string `env:"USER"`
+	PASSWORD string `env:"PASSWORD"`
+
 }
 
 const csql_tmpl  = `INSERT INTO %s.%s (user_id, item_id, score) values (?, ?, ?)`
@@ -26,10 +29,15 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	log.Println(cfg)
 	clusters := cfg.CLUSTERS
-	log.Println(clusters)
 	cluster := gocql.NewCluster(clusters...)
+
 	cluster.Keyspace = cfg.KEYSPACE
+	cluster.Authenticator = gocql.PasswordAuthenticator{
+		Username: cfg.USER,
+		Password: cfg.PASSWORD,
+	}
 	session, err := cluster.CreateSession()
 	if err != nil {
 		log.Fatalf("create session error %s", err)
@@ -45,6 +53,7 @@ func main() {
 	records, err := reader.ReadAll()
 	if err != nil {
 		panic(err)
+
 	}
 	for _, record := range records {
 		f, _ := strconv.ParseFloat(record[2], 32)
