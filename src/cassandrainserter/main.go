@@ -27,11 +27,14 @@ func main() {
 		panic(err)
 	}
 	clusters := cfg.CLUSTERS
+	log.Println(clusters)
 	cluster := gocql.NewCluster(clusters...)
 	cluster.Keyspace = cfg.KEYSPACE
 	session, err := cluster.CreateSession()
+	if err != nil {
+		log.Fatalf("create session error %s", err)
+	}
 
-	log.Println(cfg.FILE)
 	csv_file, err := os.Open(cfg.FILE)
 	if err != nil {
 		log.Fatalf("load error %s", err)
