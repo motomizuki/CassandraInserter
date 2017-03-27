@@ -8,6 +8,7 @@ import (
 	"encoding/csv"
 	"strconv"
 	"fmt"
+	"sync"
 )
 
 type config struct {
@@ -17,7 +18,8 @@ type config struct {
 	TABLE string `env:"TABLE" envDefault:"RS_SCORE_BY_ITEM"`
 	USER string `env:"USER"`
 	PASSWORD string `env:"PASSWORD"`
-
+	N int `env:"N" envDefault:"10"`
+	N_CON int `env:"N_CON" envDefault:"2"`
 }
 
 const csql_tmpl  = `INSERT INTO %s.%s (user_id, item_id, score) values (?, ?, ?)`
@@ -32,11 +34,13 @@ func main() {
 	log.Println(cfg)
 	clusters := cfg.CLUSTERS
 	cluster := gocql.NewCluster(clusters...)
-
+	cluster.NumConns = cfg.N_CON
 	cluster.Keyspace = cfg.KEYSPACE
-	cluster.Authenticator = gocql.PasswordAuthenticator{
-		Username: cfg.USER,
-		Password: cfg.PASSWORD,
+	if (cfg.USER != "" && cfg.PASSWORD != "") {
+		cluster.Authenticator = gocql.PasswordAuthenticator{
+			Username: cfg.USER,
+			Password: cfg.PASSWORD,
+		}
 	}
 	session, err := cluster.CreateSession()
 	if err != nil {
@@ -55,11 +59,26 @@ func main() {
 		panic(err)
 
 	}
-	for _, record := range records {
-		f, _ := strconv.ParseFloat(record[2], 32)
-		if err := session.Query(csql, record[0], record[1], float32(f)).Exec(); err != nil {
-			log.Fatal(err)
-		}
+	l := len(records)
+	bs := l / cfg.N
+	wg := sync.WaitGroup{}
+	wg.Add(cfg.N)
+	log.Println(l)
+	for i := 0; i < cfg.N + 1; i++ {
+		s := i * bs
+		e := s + bs
+		if e> l { e = l}
+		log.Println(e)
+		go func (record_chunk [][]string) {
+			for _, record := range record_chunk {
+				f, _ := strconv.ParseFloat(record[2], 32)
+				if err := session.Query(csql, record[0], record[1], float32(f)).Exec(); err != nil {
+					log.Fatal(err)
+				}
+			}
+			wg.Done()
+		}(records[s:e])
 	}
+	wg.Wait()
 	defer session.Close()
 }
