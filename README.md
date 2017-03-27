@@ -4,12 +4,14 @@
 CLUSTERS=127.0.0.1,127.0.0.2 FILE=/path/to/csv KEYSPACE=cassandra_keyspace TABLE=cassandra_table ./src/cassandrainserter/main
 ```
 
-+ CLUSTERS: カサンドラのip　","区切りで複数指定可能
-+ FILE: インサートするｃｓｖファイルのパス
-+ KEYSPACE: カサンドラのkey_spaceの名前
-+ TABLE: ｃｓｖをインサートするテーブル名
-
-
++ CLUSTERS: ips of cassandra (, separator)
++ FILE: file path of csv data
++ KEYSPACE: target key space of cassandra
++ TABLE: target table of cassandra
++ USER: username of cassandra password authentication
++ PASSWORD: password of cassandra password authentication
++ N: Number of data divisions.
++ N_CON: Number of connection of cassandra
 
 ### ビルド方法
 #### goのインストール
