@@ -73,10 +73,11 @@ func main() {
 			for _, record := range record_chunk {
 				f, _ := strconv.ParseFloat(record[2], 32)
 				for t := 0; t < cfg.RETRY ; t++ {
-					if err := session.Query(csql, record[0], record[1], float32(f)).Exec(); err == nil {
+					err := session.Query(csql, record[0], record[1], float32(f)).Exec()
+					if err == nil {
 						break
 					}
-					log.Println(err)
+					log.Printf("exec query error, %s", err)
 					time.Sleep(1 * time.Second)
 				}
 			}
