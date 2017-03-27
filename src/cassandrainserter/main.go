@@ -35,6 +35,7 @@ func main() {
 	}
 	log.Println(cfg)
 	clusters := cfg.CLUSTERS
+	gocql.TimeoutLimit = 0
 	cluster := gocql.NewCluster(clusters...)
 	cluster.NumConns = cfg.N_CON
 	cluster.ConnectTimeout = 5 * time.Second
