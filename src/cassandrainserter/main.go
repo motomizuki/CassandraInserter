@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"fmt"
 	"sync"
+	"time"
 )
 
 type config struct {
@@ -20,6 +21,7 @@ type config struct {
 	PASSWORD string `env:"PASSWORD"`
 	N int `env:"N" envDefault:"10"`
 	N_CON int `env:"N_CON" envDefault:"2"`
+	RETRY int `env:"RETRY" envDefault:"5"`
 }
 
 const csql_tmpl  = `INSERT INTO %s.%s (user_id, item_id, score) values (?, ?, ?)`
@@ -62,18 +64,20 @@ func main() {
 	l := len(records)
 	bs := l / cfg.N
 	wg := sync.WaitGroup{}
-	wg.Add(cfg.N)
-	log.Println(l)
+	wg.Add(cfg.N + 1)
 	for i := 0; i < cfg.N + 1; i++ {
 		s := i * bs
 		e := s + bs
 		if e> l { e = l}
-		log.Println(e)
 		go func (record_chunk [][]string) {
 			for _, record := range record_chunk {
 				f, _ := strconv.ParseFloat(record[2], 32)
-				if err := session.Query(csql, record[0], record[1], float32(f)).Exec(); err != nil {
-					log.Fatal(err)
+				for t := 0; t < cfg.RETRY ; t++ {
+					if err := session.Query(csql, record[0], record[1], float32(f)).Exec(); err == nil {
+						break
+					}
+					log.Println(err)
+					time.Sleep(1 * time.Second)
 				}
 			}
 			wg.Done()
