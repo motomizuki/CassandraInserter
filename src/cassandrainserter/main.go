@@ -37,6 +37,7 @@ func main() {
 	clusters := cfg.CLUSTERS
 	cluster := gocql.NewCluster(clusters...)
 	cluster.NumConns = cfg.N_CON
+	cluster.ConnectTimeout = 5 * time.Second
 	cluster.Keyspace = cfg.KEYSPACE
 	if (cfg.USER != "" && cfg.PASSWORD != "") {
 		cluster.Authenticator = gocql.PasswordAuthenticator{
